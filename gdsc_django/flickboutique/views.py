@@ -26,3 +26,21 @@ def businessSignup(request):
     }
 
     return render(request, 'flickboutique/businessSignup.html', context)
+
+def customerLogin(request):
+
+    form = forms.CustomerLoginForm()
+
+    context = {
+        'form' : form,
+    }
+    return render(request, 'flickboutique/customerLogin.html', context)
+
+def businessLogin(request):
+
+    form = forms.BusinessLoginForm()
+
+    context = {
+        'form' : form,
+    }
+    return render(request, 'flickboutique/businessLogin.html', context)

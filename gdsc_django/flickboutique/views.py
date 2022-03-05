@@ -44,3 +44,9 @@ def businessLogin(request):
         'form' : form,
     }
     return render(request, 'flickboutique/businessLogin.html', context)
+
+def userHome(request):
+    return render(request, 'flickboutique/userHome.html')
+
+def businessHome(request):
+    return render(request, 'flickboutique/businessHome.html')

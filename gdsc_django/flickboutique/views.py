@@ -50,3 +50,11 @@ def customerHome(request):
 
 def businessHome(request):
     return render(request, 'flickboutique/businessHome.html')
+
+def manageSite(request):
+    
+    return render(request, 'flickboutique/manageSite.html')
+
+def productPage(request):
+
+    return render(request, 'flickboutique/productPage.html')

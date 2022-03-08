@@ -11,4 +11,6 @@ urlpatterns = [
     path("business-login", views.businessLogin, name="businessLogin"),
     path("customer-home", views.customerHome, name="customerHome"),
     path("business-home", views.businessHome, name="businessHome"),
+    path("manage-site", views.manageSite, name="manageSite"),
+    path("product-page", views.productPage, name="productPage"),
 ]

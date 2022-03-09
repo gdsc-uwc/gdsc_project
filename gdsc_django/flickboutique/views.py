@@ -46,9 +46,11 @@ def businessLogin(request):
     return render(request, 'flickboutique/businessLogin.html', context)
 
 def customerHome(request):
+    
     return render(request, 'flickboutique/customerHome.html')
 
 def businessHome(request):
+
     return render(request, 'flickboutique/businessHome.html')
 
 def manageSite(request):
@@ -58,3 +60,7 @@ def manageSite(request):
 def productPage(request):
 
     return render(request, 'flickboutique/productPage.html')
+
+def businessView(request):
+
+    return render(request, 'flickboutique/businessView.html')

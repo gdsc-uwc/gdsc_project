@@ -5,7 +5,7 @@ from . import forms
 # Create your views here.
 
 def index(request):
-    return render(request, 'flickboutique/layout.html')
+    return render(request, 'flickboutique/landingPage.html')
 
 def customerSignup(request):
 
@@ -53,28 +53,6 @@ def businessHome(request):
 
     return render(request, 'flickboutique/businessHome.html')
 
-def manageSite(request):
-    if request.method == 'GET':
-        accentColor = request.GET.get('accentColor')
-        backgroundColor = request.GET.get('backgroundColor')
-        textColor = request.GET.get('textColor')
-        secondaryTextColor = request.GET.get('secondaryTextColor')
-        productCardHeaderColor = request.GET.get('productCardHeaderColor')
-        productCardBodyColor = request.GET.get('productCardBodyColor')
-        productCardFooterColor = request.GET.get('productCardFooterColor')
-
-
-    context = {
-        'accentColor': accentColor,
-        'backgroundColor': backgroundColor,
-        'textColor': textColor,
-        'productCardHeaderColor': productCardHeaderColor,
-        'productCardBodyColor': productCardBodyColor,
-        'productCardFooterColor': productCardFooterColor
-        }
-
-    
-    return render(request, 'flickboutique/manageSite.html')
 
 def productPage(request):
 
@@ -109,3 +87,26 @@ def previewSiteChanges(request):
         }
 
     return render(request, 'flickboutique/previewSiteChanges.html', context)
+
+def manageSite(request):
+    if request.method == 'GET':
+        accentColor = request.GET.get('accentColor')
+        backgroundColor = request.GET.get('backgroundColor')
+        textColor = request.GET.get('textColor')
+        secondaryTextColor = request.GET.get('secondaryTextColor')
+        productCardHeaderColor = request.GET.get('productCardHeaderColor')
+        productCardBodyColor = request.GET.get('productCardBodyColor')
+        productCardFooterColor = request.GET.get('productCardFooterColor')
+
+
+    context = {
+        'accentColor': accentColor,
+        'backgroundColor': backgroundColor,
+        'textColor': textColor,
+        'productCardHeaderColor': productCardHeaderColor,
+        'productCardBodyColor': productCardBodyColor,
+        'productCardFooterColor': productCardFooterColor
+        }
+
+    
+    return render(request, 'flickboutique/manageSite.html')

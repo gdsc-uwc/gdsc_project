@@ -35,6 +35,8 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'flickboutique',
     'colorfield', # Color field plugin
+    'django_countries', # Countries field plugin
+    'phonenumber_field', # Phone number field
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

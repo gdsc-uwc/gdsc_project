@@ -14,4 +14,6 @@ urlpatterns = [
     path("manage-site", views.manageSite, name="manageSite"),
     path("product-page", views.productPage, name="productPage"), # Business username should later be added
     path("business-view", views.businessView, name="businessView"), # This should later be changed to the business username
+    path("register-product", views.registerProduct, name="registerProduct"),
+    path("preview-changes", views.previewSiteChanges, name="previewSiteChanges"),
 ]

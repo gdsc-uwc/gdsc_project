@@ -49,6 +49,7 @@ class BusinessInfo(models.Model):
     # Other information
     bio = models.CharField(max_length=1024)
     colorScheme = models.ForeignKey(ColorScheme, on_delete=models.CASCADE, related_name="business_color_scheme", null=True)
+    profilePicture = models.ImageField(null=True)
 
     def __str__(self):
         return f"{self.user.first_name} ({self.user.username}), {self.city}"

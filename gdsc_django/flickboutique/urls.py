@@ -6,11 +6,11 @@ app_name = 'flickboutique'
 urlpatterns = [
     # Template-less URLs
     path("delete-product", views.deleteProduct, name="deleteProduct"),
-    path("customer-logout", views.customerLogout, name="customerLogout"),
-    path("business-logout", views.businessLogout, name="businessLogout"),
+    path("user-logout", views.userLogout, name="userLogout"),
     path("rate-product", views.rateProduct, name="rateProduct"),
     path("comment-product", views.commentProduct, name="commentProduct"),
     path("reply-product-comment", views.replyProductComment, name="replyProductComment"),
+    path("process-edited-business", views.processEditedBusiness, name="processEditedBusiness"),
 
     # URLs with templates
     path("", views.index, name="index"),
@@ -24,8 +24,8 @@ urlpatterns = [
     path("business-home", views.businessHome, name="businessHome"), # This should later be the index if the user is a business
     path("manage-site", views.manageSite, name="manageSite"),
     path("product-page/<str:productURL>/", views.productPage, name="productPage"), # Business username should later be added
-    path("business-view/<str:username>", views.businessView, name="businessView"), # This should later be changed to the business username
-    path("register-product", views.registerProduct, name="registerProduct"),
     path("preview-changes", views.previewSiteChanges, name="previewSiteChanges"),
-    path("<str:username>", views.businessProfilePage, name="businessProfilePage"),
+    path("<str:username>", views.businessView, name="businessView"),
+    path("register-product", views.registerProduct, name="registerProduct"),
+    path("edit/<str:username>", views.editBusinessProfilePage, name="editBusinessProfilePage"),
 ]

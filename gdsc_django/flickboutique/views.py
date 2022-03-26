@@ -183,9 +183,15 @@ def businessHome(request):
 
     products = models.Product.objects.filter(soldBy=request.user)
 
+    try:
+        userBusinessInfo = models.BusinessInfo.objects.get(user=request.user)
+    except (KeyError, models.BusinessInfo.DoesNotExist):
+        userBusinessInfo = None
+
     context = {
         'products' : products,
-        'userinfo': models.BusinessInfo.objects.get(user=User.objects.get(username=request.user.username)),
+        'businessInfo': userBusinessInfo,
+        'userBusinessInfo': userBusinessInfo,
     }
 
     return render(request, 'flickboutique/businessHome.html', context)
@@ -210,12 +216,24 @@ def businessView(request, username):
     if not request.user.is_authenticated:
         return HttpResponseRedirect(reverse('flickboutique:index'))
 
-    businessUser = models.User.objects.get(username=username)
+    try:
+        businessUser = User.objects.get(username=username)
+    except User.DoesNotExist:
+        businessUser = request.user
+
     products = models.Product.objects.filter(soldBy=businessUser)
+
+
+    try:
+        userBusinessInfo = models.BusinessInfo.objects.get(user=request.user)
+    except (KeyError, models.BusinessInfo.DoesNotExist):
+        userBusinessInfo = None
 
     context = {
         'products' : products,
-        'userinfo': models.BusinessInfo.objects.get(user=businessUser),
+        'business': businessUser,
+        'businessInfo': models.BusinessInfo.objects.get(user=businessUser),
+        'userBusinessInfo': userBusinessInfo,
     }
 
     return render(request, 'flickboutique/businessView.html', context)
@@ -276,6 +294,8 @@ def previewSiteChanges(request):
         productCardGlowColor1 = request.GET.get('productCardGlowColor1')
         productCardGlowColor2 = request.GET.get('productCardGlowColor2')
 
+        userBusinessInfo = models.BusinessInfo.objects.get(user=request.user)
+
 
         context = {
             'accentColor': accentColor,
@@ -285,7 +305,8 @@ def previewSiteChanges(request):
             'productCardColor': productCardColor,
             'productCardGlowColor1': productCardGlowColor1,
             'productCardGlowColor2': productCardGlowColor2,
-            'userinfo': models.BusinessInfo.objects.get(user=User.objects.get(username=request.user.username)),
+            'businessInfo': userBusinessInfo,
+            'userBusinessInfo': userBusinessInfo,
         }
 
         return render(request, 'flickboutique/previewSiteChanges.html', context)
@@ -300,7 +321,7 @@ def previewSiteChanges(request):
         productCardGlowColor1 = request.POST.get('productCardGlowColor1')
         productCardGlowColor2 = request.POST.get('productCardGlowColor2')
 
-        user = models.BusinessInfo.objects.get(user=User.objects.get(username=request.user.username))
+        user = models.BusinessInfo.objects.get(user=request.user)
 
         if not user.colorScheme:
             scheme = models.ColorScheme.objects.create(schemeName=request.user.username, accentColor=accentColor, backgroundColor=backgroundColor, textColor=textColor, secondaryTextColor=secondaryTextColor, productCardColor=productCardColor, productCardGlowColor1=productCardGlowColor1, productCardGlowColor2=productCardGlowColor2)
@@ -331,6 +352,8 @@ def manageSite(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect(reverse('flickboutique:index'))
 
+    userBusinessInfo = models.BusinessInfo.objects.get(user=request.user)
+
     if request.method == 'POST':
         logo = request.FILES['logo']
         userinfo = models.BusinessInfo.objects.get(user=User.objects.get(username=request.user.username))
@@ -342,18 +365,14 @@ def manageSite(request):
 
     
     context = {
-        'userinfo': models.BusinessInfo.objects.get(user=User.objects.get(username=request.user.username)),
+        'businessInfo': userBusinessInfo,
+        'userBusinessInfo': userBusinessInfo
     }
    
     return render(request, 'flickboutique/manageSite.html', context)
 
 
-def customerLogout(request):
-    logout(request)
-    return HttpResponseRedirect(reverse('flickboutique:index'))
-
-
-def businessLogout(request):
+def userLogout(request):
     logout(request)
     return HttpResponseRedirect(reverse('flickboutique:index'))
 
@@ -429,14 +448,62 @@ def replyProductComment(request):
         return HttpResponseRedirect(reverse('flickboutique:productPage', kwargs={'productURL': productCommented.productURL}))
 
 
-def businessProfilePage(request, username):
+def editBusinessProfilePage(request, username):
 
-    business = models.User.objects.get(username=username)
-    businessInfo = models.BusinessInfo.objects.get(user=business)
+    if username == request.user.username:
+        business = models.User.objects.get(username=username)
+        businessInfo = models.BusinessInfo.objects.get(user=business)
 
-    context = {
-        'business': business,
-        'businessInfo': businessInfo,
-    }
+        context = {
+            'business': business,
+            'businessInfo': businessInfo,
+            'userBusinessInfo': businessInfo
+        }
 
-    return render(request, 'flickboutique/businessProfilePage.html', context)
+        return render(request, 'flickboutique/editBusinessProfilePage.html', context)
+    else:
+        return HttpResponse("Hey, you aren't supposed to be here!")
+
+
+def processEditedBusiness(request):
+
+    if request.method == 'POST':
+
+        if request.POST.get('changeBusinessName'):
+            businessName = request.POST.get('editBusinessName')
+            user = User.objects.get(username=request.user.username)
+            user.first_name = businessName
+            user.save()
+
+        if request.POST.get('changeUsername'):
+            username = request.POST.get('editUsername')
+            user = User.objects.get(username=request.user.username)
+            user.username = username
+            user.save()
+
+        if request.POST.get('changeProfilePicture'):
+            profilePicture = request.FILES['editProfilePicture']
+            business = models.BusinessInfo.objects.get(user=request.user)
+            business.profilePicture = profilePicture
+            business.save()
+        
+        if request.POST.get('changeBio'):
+            bio = request.POST.get('editBio')
+            business = models.BusinessInfo.objects.get(user=request.user)
+            print("Bio edit success")
+            business.bio = bio
+            business.save()
+
+        if request.POST.get('changeAddress'):
+            streetAddress = request.POST.get('editStreetAddress')
+            city = request.POST.get('editCity')
+            suburb = request.POST.get('editSuburb')
+            postalCode = request.POST.get('editPostalCode')
+            business = models.BusinessInfo.objects.get(user=request.user)
+            business.streetAddress = streetAddress
+            business.city = city
+            business.suburb = suburb
+            business.postalCode = postalCode
+            business.save()
+        
+    return HttpResponseRedirect(reverse('flickboutique:businessHome'))

@@ -24,8 +24,8 @@ urlpatterns = [
     path("business-home", views.businessHome, name="businessHome"), # This should later be the index if the user is a business
     path("manage-site", views.manageSite, name="manageSite"),
     path("product-page/<str:productURL>/", views.productPage, name="productPage"), # Business username should later be added
-    path("preview-changes", views.previewSiteChanges, name="previewSiteChanges"),
-    path("<str:username>", views.businessView, name="businessView"),
     path("register-product", views.registerProduct, name="registerProduct"),
+    path("preview-changes", views.previewSiteChanges, name="previewSiteChanges"),
     path("edit/<str:username>", views.editBusinessProfilePage, name="editBusinessProfilePage"),
+    path("<str:username>", views.businessView, name="businessView"),
 ]

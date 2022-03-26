@@ -166,10 +166,10 @@ def customerHome(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect(reverse('flickboutique:index'))
 
-    products = models.Product.objects.order_by('-productRating').all()
+    businesses = models.BusinessInfo.objects.all()
 
     context = {
-        'products' : products,
+        'businesses' : businesses,
     }
 
     return render(request, 'flickboutique/customerHome.html', context)
@@ -216,10 +216,7 @@ def businessView(request, username):
     if not request.user.is_authenticated:
         return HttpResponseRedirect(reverse('flickboutique:index'))
 
-    try:
-        businessUser = User.objects.get(username=username)
-    except User.DoesNotExist:
-        businessUser = request.user
+    businessUser = User.objects.get(username=username)
 
     products = models.Product.objects.filter(soldBy=businessUser)
 

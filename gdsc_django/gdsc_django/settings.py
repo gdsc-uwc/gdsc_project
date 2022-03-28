@@ -27,12 +27,13 @@ SECRET_KEY = 'django-insecure-$-ewnqn^$y18wi57$&1jd+qji-icyx-yl+3o@n-$uv1&293&22
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'pwa',
     'flickboutique',
     'colorfield', # Color field plugin
     'django_countries', # Countries field plugin

@@ -1,0 +1,43 @@
+{% extends "flickboutique/layout.html" %}
+{% load static %}
+
+{% block body %}
+
+    <main>
+
+        {% block customerNav %}{{ block.super }}{% endblock %}
+
+        <div id="feedContainer" class="container my-2">
+
+            <div class="row">
+                <div class="col-md-4">
+                    <a href="{% url 'flickboutique:productPage' %}" class="productCard card m-2">
+                        <div class="card-header">Product name</div>
+                        <img class="card-img-top" src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80">
+                        <div class="card-body">Product information.</div>
+                        <div class="card-footer">R99.99</div>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'flickboutique:productPage' %}" class="productCard card m-2">
+                        <div class="card-header">Product name</div>
+                        <img class="card-img-top" src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80">
+                        <div class="card-body">Product information.</div>
+                        <div class="card-footer">R99.99</div>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'flickboutique:productPage' %}" class="productCard card m-2">
+                        <div class="card-header">Product name</div>
+                        <img class="card-img-top" src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80">
+                        <div class="card-body">Product information.</div>
+                        <div class="card-footer">R99.99</div>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+{% endblock %}

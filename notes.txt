@@ -1,0 +1,10 @@
+- Have two types of users: customers and sellers
+- Allow sellers to establish stores with unique names and be able to customise logos and colors.
+
+
+Bootstrap:
+
+Build the site on Bootstrap and use bootstrap styling, then override the styles later.
+
+Forms and models:
+- Forms and models go hand in hand. No input should go unrepresented in the database.

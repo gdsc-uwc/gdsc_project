@@ -33,7 +33,6 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'pwa',
     'flickboutique',
     'colorfield', # Color field plugin
     'django_countries', # Countries field plugin

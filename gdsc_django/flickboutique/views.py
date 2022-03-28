@@ -1,3 +1,4 @@
+from re import T
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
@@ -118,6 +119,7 @@ def customerLogin(request):
 
             if user is not None:
                 login(request, user)
+                request.session['pageVisits'] = 0
                 return HttpResponseRedirect(reverse('flickboutique:customerHome'))
             else:
                 return render(request, 'flickboutique/customerLogin.html', {
@@ -147,6 +149,7 @@ def businessLogin(request):
 
             if user is not None:
                 login(request, user)
+                request.session['pageVisits'] = 0
                 return HttpResponseRedirect(reverse('flickboutique:businessHome'))
             else:
                 return render(request, 'flickboutique/businessLogin.html', {
@@ -166,10 +169,24 @@ def customerHome(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect(reverse('flickboutique:index'))
 
-    businesses = models.BusinessInfo.objects.all()
+    request.session['pageVisits'] += 1
+
+    businesses = models.BusinessInfo.objects.all().order_by('-rating')
+
+    business = User.objects.get(username=request.user.username)
+
+    try:
+        businessInfo = models.BusinessInfo.objects.get(user=business)
+    except models.BusinessInfo.DoesNotExist:
+        businessInfo = None
 
     context = {
         'businesses' : businesses,
+        'business': business,
+        'businessInfo': businessInfo,
+        'userBusinessInfo': businessInfo,
+        'defaultScheme': models.ColorScheme.objects.get(schemeName="bilbaoDefault"),
+        'pageVisits': request.session['pageVisits']
     }
 
     return render(request, 'flickboutique/customerHome.html', context)
@@ -180,6 +197,8 @@ def businessHome(request):
     # Return to landing page if user is not logged in
     if not request.user.is_authenticated:
         return HttpResponseRedirect(reverse('flickboutique:index'))
+    
+    request.session['pageVisits'] += 1
 
     products = models.Product.objects.filter(soldBy=request.user)
 
@@ -192,6 +211,7 @@ def businessHome(request):
         'products' : products,
         'businessInfo': userBusinessInfo,
         'userBusinessInfo': userBusinessInfo,
+        'pageVisits': request.session['pageVisits']
     }
 
     return render(request, 'flickboutique/businessHome.html', context)
@@ -199,8 +219,16 @@ def businessHome(request):
 
 def productPage(request, productURL):
 
+    try:
+        userBusinessInfo = models.BusinessInfo.objects.get(user=request.user)
+    except models.BusinessInfo.DoesNotExist:
+        userBusinessInfo = None
+
     context = {
-        'product': models.Product.objects.get(productURL=productURL)
+        'product': models.Product.objects.get(productURL=productURL),
+        'businessInfo': userBusinessInfo,
+        'userBusinessInfo': userBusinessInfo,
+        'defaultScheme': models.ColorScheme.objects.get(schemeName="bilbaoDefault")
     }
 
     # Return to landing page if user is not logged in
@@ -255,8 +283,7 @@ def registerProduct(request):
             productInformation = submittedForm.cleaned_data['productInformation']
             productImage = request.FILES['productImage']
             productURL = productName.replace(' ', '-')
-            newProduct = models.Product.objects.create(productName=productName, productDepartment=models.ProductDepartment.objects.get(id=productDepartment), productPrice=productPrice, productImage=productImage, productInformation=productInformation, productURL=productURL)
-            newProduct.soldBy.add(request.user)
+            newProduct = models.Product.objects.create(productName=productName, productDepartment=models.ProductDepartment.objects.get(id=productDepartment), productPrice=productPrice, productImage=productImage, productInformation=productInformation, productURL=productURL, soldBy=request.user)
             newProduct.save()
 
             return HttpResponseRedirect(reverse("flickboutique:businessHome"))
@@ -320,7 +347,7 @@ def previewSiteChanges(request):
 
         user = models.BusinessInfo.objects.get(user=request.user)
 
-        if not user.colorScheme:
+        if user.colorScheme.schemeName != request.user.username:
             scheme = models.ColorScheme.objects.create(schemeName=request.user.username, accentColor=accentColor, backgroundColor=backgroundColor, textColor=textColor, secondaryTextColor=secondaryTextColor, productCardColor=productCardColor, productCardGlowColor1=productCardGlowColor1, productCardGlowColor2=productCardGlowColor2)
             scheme.save()
             user.colorScheme = scheme
@@ -371,13 +398,14 @@ def manageSite(request):
 
 def userLogout(request):
     logout(request)
+    request.session['pageVisits'] = None
     return HttpResponseRedirect(reverse('flickboutique:index'))
 
 
 def deleteProduct(request):
     if request.method == 'POST':
         deletingProduct = request.POST.get('productURL')
-        models.Product.objects.get(productURL=deletingProduct).soldBy.remove(request.user)
+        models.Product.objects.get(productURL=deletingProduct).delete()
         return HttpResponseRedirect(reverse('flickboutique:businessHome'))
 
 
@@ -408,7 +436,36 @@ def rateProduct(request):
 
 
         return HttpResponseRedirect(reverse('flickboutique:productPage', kwargs={'productURL': product.productURL}))
-    
+
+
+def rateBusiness(request):
+    if request.method == 'POST':
+        businessName = request.POST.get('businessName')
+        businessRating = int(request.POST.get('businessRating'))
+        business = models.BusinessInfo.objects.get(user=User.objects.get(username=businessName))
+
+        # Fetch model values
+        if business.ratingsSum:
+            sumRatings = business.ratingsSum
+        else:
+            sumRatings = 0
+            
+        totalRatings = business.totalRatings
+
+        # Update model values
+        sumRatings += businessRating
+        totalRatings += 1
+
+        business.ratingsSum = sumRatings
+        newRating = sumRatings / totalRatings
+        business.rating = newRating
+        business.totalRatings = totalRatings
+        business.raters.add(request.user)
+        business.save()
+
+
+        return HttpResponseRedirect(reverse('flickboutique:businessView', kwargs={'username': business.user.username}))
+
 
 def commentProduct(request):
     if request.method == 'POST':
@@ -483,6 +540,12 @@ def processEditedBusiness(request):
             business = models.BusinessInfo.objects.get(user=request.user)
             business.profilePicture = profilePicture
             business.save()
+
+        if request.POST.get('changeProfileBanner'):
+            profileBanner = request.FILES['editProfileBanner']
+            business = models.BusinessInfo.objects.get(user=request.user)
+            business.profileBanner = profileBanner
+            business.save()
         
         if request.POST.get('changeBio'):
             bio = request.POST.get('editBio')
@@ -504,3 +567,236 @@ def processEditedBusiness(request):
             business.save()
         
     return HttpResponseRedirect(reverse('flickboutique:businessHome'))
+
+def cart(request):
+
+    try:
+        cart = models.CustomerShoppingCart.objects.get(buyer=request.user)
+    except models.CustomerShoppingCart.DoesNotExist:
+        cart = None
+    
+    # Computing total price
+    
+    totalPrice = 0
+    
+    try:
+        cartItems = cart.items.all()
+
+        for item in cartItems:
+            price = item.item.productPrice
+            totalPrice += price * item.quantity
+    except AttributeError:
+        totalPrice = 0
+
+    business = User.objects.get(username=request.user.username)
+
+    try:
+        businessInfo = models.BusinessInfo.objects.get(user=business)
+    except models.BusinessInfo.DoesNotExist:
+        businessInfo = None
+
+    context = {
+        'defaultScheme': models.ColorScheme.objects.get(schemeName="bilbaoDefault"),
+        'cart': cart,
+        'totalPrice': totalPrice,
+        'businessInfo': businessInfo,
+        'userBusinessInfo': businessInfo,
+    }
+
+    return render(request, 'flickboutique/cart.html', context)
+
+def addToCart(request):
+    if request.method == 'POST':
+        try:
+            cart = models.CustomerShoppingCart.objects.get(buyer=request.user)
+        except models.CustomerShoppingCart.DoesNotExist:
+            cart = models.CustomerShoppingCart.objects.create(buyer=request.user)
+            cart.save()
+        finally:
+            productURL = request.POST.get('productURL')
+            buyQuantity = request.POST.get('buyQuantity')
+            product = models.Product.objects.get(productURL=productURL)
+            cart = models.CustomerShoppingCart.objects.get(buyer=request.user)
+            cartItem = models.CartItem.objects.create(item=product)
+            cartItem.quantity = buyQuantity
+            cartItem.save()
+            cart.items.add(cartItem)
+            cart.save()
+
+    return HttpResponseRedirect(reverse('flickboutique:cart'))
+
+def deleteFromCart(request):
+    if request.method == 'POST':
+        cart = models.CustomerShoppingCart.objects.get(buyer=request.user)
+        cart.items.remove(models.CartItem.objects.get(id=request.POST.get('cartItemId')))
+        models.CartItem.objects.filter(id=request.POST.get('cartItemId')).delete()
+        cart.save()
+
+    return HttpResponseRedirect(reverse('flickboutique:cart'))
+
+def paymentsProcessing(request):
+
+    return render(request, "flickboutique/paymentsProcessing.html")
+
+def completeOrderDetails(request):
+
+    orderCart = models.CustomerShoppingCart.objects.get(buyer=request.user)
+
+    for item in orderCart.items.all():
+        try:
+            order = models.Order.objects.get(buyer=request.user, business=item.item.soldBy)
+        except models.Order.DoesNotExist:
+            order = models.Order.objects.create(buyer=request.user, business=item.item.soldBy)
+        
+        order.items.add(item)
+        order.save()
+
+    models.CustomerShoppingCart.objects.filter(buyer=request.user).delete()
+
+    return HttpResponseRedirect(reverse('flickboutique:customerHome'))
+
+def viewBusinessOrders(request):
+    
+    orders = models.Order.objects.filter(business=request.user)
+
+    business = models.User.objects.get(username=request.user.username)
+    businessInfo = models.BusinessInfo.objects.get(user=business)
+
+    context = {
+        'orders': orders,
+        'business': business,
+        'businessInfo': businessInfo,
+        'userBusinessInfo': businessInfo,
+    }
+
+    return render(request, 'flickboutique/viewBusinessOrders.html', context)
+
+def viewCustomerOrders(request):
+    
+    orders = models.Order.objects.filter(buyer=request.user)
+
+    business = User.objects.get(username=request.user.username)
+
+    try:
+        businessInfo = models.BusinessInfo.objects.get(user=business)
+    except models.BusinessInfo.DoesNotExist:
+        businessInfo = None
+
+    context = {
+        'orders': orders,
+        'business': business,
+        'businessInfo': businessInfo,
+        'userBusinessInfo': businessInfo,
+        'defaultScheme': models.ColorScheme.objects.get(schemeName="bilbaoDefault")
+    }
+
+    return render(request, 'flickboutique/viewCustomerOrders.html', context)
+
+def orderComplete(request):
+    if request.method == 'POST':
+        order = models.Order.objects.get(buyer=User.objects.get(username=request.POST.get('orderBuyer')), business=request.user)
+        for item in order.items.all():
+            item.delete()
+
+        order.delete()
+    return HttpResponseRedirect(reverse('flickboutique:viewBusinessOrders'))
+
+def orderCustomerConversation(request, business):
+    try:
+        conversation = models.Conversation.objects.get(business=User.objects.get(username=business), customer=request.user)
+    except models.Conversation.DoesNotExist:
+        conversation = models.Conversation.objects.create(business=User.objects.get(username=business), customer=request.user)
+
+    business = User.objects.get(username=request.user.username)
+
+    try:
+        businessInfo = models.BusinessInfo.objects.get(user=business)
+    except models.BusinessInfo.DoesNotExist:
+        businessInfo = None
+
+    context = {
+        'business': business,
+        'businessInfo': businessInfo,
+        'userBusinessInfo': businessInfo,
+        'defaultScheme': models.ColorScheme.objects.get(schemeName="bilbaoDefault"),
+        'conversation': conversation
+    }
+    
+    return render(request, 'flickboutique/orderCustomerConversation.html', context)
+
+def addCustomerMessage(request):
+    if request.method == 'POST':
+        business = request.POST.get('business')
+        newMessage = models.Message.objects.create(sender=request.user, body=request.POST.get('sentMessage'))
+        models.Conversation.objects.get(business=User.objects.get(username=business), customer=request.user).messages.add(newMessage)
+    
+        return HttpResponseRedirect(reverse('flickboutique:orderCustomerConversation', kwargs={'business': business}))
+
+
+def orderBusinessConversation(request, business, customer):
+    try:
+        conversation = models.Conversation.objects.get(business=request.user, customer=User.objects.get(username=customer))
+    except models.Conversation.DoesNotExist:
+        conversation = models.Conversation.objects.create(business=request.user, customer=User.objects.get(username=customer))
+
+    business = User.objects.get(username=request.user.username)
+
+    businessInfo = models.BusinessInfo.objects.get(user=business)
+
+    context = {
+        'business': business,
+        'businessInfo': businessInfo,
+        'userBusinessInfo': businessInfo,
+        'defaultScheme': models.ColorScheme.objects.get(schemeName="bilbaoDefault"),
+        'conversation': conversation
+    }
+    
+    return render(request, 'flickboutique/orderBusinessConversation.html', context)
+
+def addBusinessMessage(request):
+    if request.method == 'POST':
+        customer = request.POST.get('customer')
+        newMessage = models.Message.objects.create(sender=request.user, body=request.POST.get('sentMessage'))
+        models.Conversation.objects.get(business=request.user, customer=User.objects.get(username=customer)).messages.add(newMessage)
+    
+        return HttpResponseRedirect(reverse('flickboutique:orderBusinessConversation', kwargs={'customer': customer, 'business': request.user.username}))
+
+def customerConversationsList(request):
+    conversations = models.Conversation.objects.filter(customer=request.user)
+
+    business = User.objects.get(username=request.user.username)
+
+    try:
+        businessInfo = models.BusinessInfo.objects.get(user=business)
+    except models.BusinessInfo.DoesNotExist:
+        businessInfo = None
+
+    context = {
+        'business': business,
+        'businessInfo': businessInfo,
+        'userBusinessInfo': businessInfo,
+        'defaultScheme': models.ColorScheme.objects.get(schemeName="bilbaoDefault"),
+        'conversations': conversations
+    }
+
+    return render(request, 'flickboutique/customerConversationsList.html', context)
+
+def businessConversationsList(request, business):
+    conversations = models.Conversation.objects.filter(business=request.user)
+
+    business = User.objects.get(username=request.user.username)
+
+    try:
+        businessInfo = models.BusinessInfo.objects.get(user=business)
+    except models.BusinessInfo.DoesNotExist:
+        businessInfo = None
+
+    context = {
+        'business': business,
+        'businessInfo': businessInfo,
+        'userBusinessInfo': businessInfo,
+        'defaultScheme': models.ColorScheme.objects.get(schemeName="bilbaoDefault"),
+        'conversations': conversations
+    }
+
+    return render(request, 'flickboutique/businessConversationsList.html', context)

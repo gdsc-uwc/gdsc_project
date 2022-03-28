@@ -14,7 +14,7 @@ class ColorScheme(models.Model):
     productCardColor = models.CharField(max_length=20, default="#FFFFFF")
     productCardGlowColor1 = models.CharField(max_length=20, default="orange")
     productCardGlowColor2 = models.CharField(max_length=20, default="lightblue")
-    logo = models.ImageField(null=True)
+    logo = models.ImageField(default="billbao_logo.png")
 
     def __str__(self):
         return self.schemeName
@@ -48,8 +48,13 @@ class BusinessInfo(models.Model):
     phoneNumber = PhoneNumberField()
     # Other information
     bio = models.CharField(max_length=1024)
-    colorScheme = models.ForeignKey(ColorScheme, on_delete=models.CASCADE, related_name="business_color_scheme", null=True)
-    profilePicture = models.ImageField(null=True)
+    colorScheme = models.ForeignKey(ColorScheme, on_delete=models.CASCADE, related_name="business_color_scheme", default=ColorScheme.objects.get(schemeName="bilbaoDefault").pk)
+    profilePicture = models.ImageField(default="noPP.svg")
+    profileBanner = models.ImageField(default="nobanner.png")
+    rating = models.FloatField(default=0)
+    totalRatings = models.IntegerField(default=0)
+    ratingsSum = models.IntegerField(null=True)
+    raters = models.ManyToManyField(User, related_name="business_raters")
 
     def __str__(self):
         return f"{self.user.first_name} ({self.user.username}), {self.city}"
@@ -82,16 +87,43 @@ class Product(models.Model):
     productDepartment = models.ForeignKey(ProductDepartment, related_name="product_department", on_delete=models.CASCADE)
     productPrice = models.FloatField()
     productInformation = models.CharField(max_length=2048)
-    productManufacturer = models.ForeignKey(Manufacturer, related_name="product_manufacturer", on_delete=models.CASCADE, null=True)
     productRating = models.FloatField(default=0)
     productTotalRatings = models.IntegerField(default=0)
     productImage = models.ImageField(null=True)
     productRatingsSum = models.IntegerField(null=True)
     productRaters = models.ManyToManyField(User, related_name="product_raters")
-    soldBy = models.ManyToManyField(User)
+    soldBy = models.ForeignKey(User, related_name="product_seller", on_delete=models.CASCADE, null=True)
     productComments = models.ManyToManyField(ProductComment, related_name="product_comments")
 
     def __str__(self):
         return self.productName
 
+class CartItem(models.Model):
+    
+    item = models.ForeignKey(Product, related_name="cart_item", on_delete=models.CASCADE)
+    quantity = models.IntegerField(null=True)
+
+    def __str__(self):
+        return self.item.productName
+
+class CustomerShoppingCart(models.Model):
+    buyer = models.ForeignKey(User, related_name="buyer", on_delete=models.CASCADE)
+    items = models.ManyToManyField(CartItem, related_name="shopping_cart_items")
+
+class Order(models.Model):
+    buyer = models.ForeignKey(User, related_name="order_maker", on_delete=models.CASCADE)
+    business = models.ForeignKey(User, related_name="order_checker", on_delete=models.CASCADE)
+    items = models.ManyToManyField(CartItem, related_name="ordered_items")
+
+class Message(models.Model):
+    sender = models.ForeignKey(User, related_name="message_sender", on_delete=models.CASCADE)
+    body = models.TextField()
+
+    def __str__(self):
+        return self.body
+
+class Conversation(models.Model):
+    messages = models.ManyToManyField(Message, related_name="conversation_messages")
+    business = models.ForeignKey(User, related_name="business_message", on_delete=models.CASCADE)
+    customer = models.ForeignKey(User, related_name="customer_message", on_delete=models.CASCADE)
 

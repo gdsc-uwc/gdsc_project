@@ -1,3 +1,4 @@
+django
 colorfield
 django-phonenumber-field[phonenumbers]
 django-countries
